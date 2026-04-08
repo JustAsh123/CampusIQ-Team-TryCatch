@@ -47,11 +47,11 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-50 dark:bg-surface-950 px-4 relative">
-      <div className="absolute top-0 right-0 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl" />
+    <div className="min-h-dvh flex items-center justify-center bg-surface-50 dark:bg-surface-950 px-4 py-10 relative overflow-hidden">
+      <div className="pointer-events-none absolute -z-10 top-0 right-0 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute -z-10 bottom-0 left-0 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl" />
 
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
       </div>
 
@@ -59,7 +59,7 @@ export default function Register() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
       >
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2.5 mb-4">
@@ -71,11 +71,11 @@ export default function Register() {
           <p className="text-surface-500 dark:text-surface-400 text-sm mt-1">Get started with CampusIQ</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-7 shadow-xl shadow-surface-900/5 dark:shadow-black/20">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-6 sm:p-7 shadow-xl shadow-surface-900/5 dark:shadow-black/20">
           <button
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-gray-900 text-surface-700 dark:text-surface-200 font-medium text-sm hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors mb-6"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-gray-900 text-surface-700 dark:text-surface-200 font-medium text-sm hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors mb-6"
             id="google-signup-btn"
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5">
