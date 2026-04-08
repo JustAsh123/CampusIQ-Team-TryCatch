@@ -1,18 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarDays, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, CalendarDays, CheckCircle, Clock, Loader2 } from 'lucide-react';
 import Modal from './ui/Modal';
 import { TIME_SLOTS } from '../utils/constants';
-import { getBookingsForResourceOnDate } from '../services/bookingService';
-import { createBooking } from '../services/bookingService';
+import { createBooking, listenToResourceBookings } from '../services/bookings';
 import { useAuth } from '../context/AuthContext';
-import { getToday } from '../utils/helpers';
+import { useNow } from '../hooks/useNow';
+import {
+  datesOverlap,
+  getBookingWindow,
+  getResourceTypeLabel,
+  getToday,
+  getStatusLabel,
+  isPastBookingSlot,
+} from '../utils/helpers';
 
 export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
   const { user } = useAuth();
+  const now = useNow();
   const [date, setDate] = useState(getToday());
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [bookedSlots, setBookedSlots] = useState([]);
+  const [dayBookings, setDayBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -20,43 +28,77 @@ export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
 
   useEffect(() => {
     if (!isOpen || !resource) return;
+    setDate(getToday());
     setSelectedSlot(null);
     setError('');
     setSuccess(false);
-    fetchBookedSlots(date);
-  }, [isOpen, resource, date]);
+    setDayBookings([]);
+  }, [isOpen, resource]);
 
-  const fetchBookedSlots = async (d) => {
-    if (!resource) return;
-    try {
-      setSlotsLoading(true);
-      const bookings = await getBookingsForResourceOnDate(resource.id, d);
-      const slots = bookings
-        .filter((b) => b.status !== 'Cancelled')
-        .map((b) => b.timeSlot);
-      setBookedSlots(slots);
-    } catch {
-      setBookedSlots([]);
-    } finally {
-      setSlotsLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (!isOpen || !resource) return undefined;
+
+    setSlotsLoading(true);
+    const stopListener = listenToResourceBookings(
+      resource.id,
+      date,
+      (bookings) => {
+        setDayBookings(bookings);
+        setSlotsLoading(false);
+      },
+      () => {
+        setDayBookings([]);
+        setSlotsLoading(false);
+      },
+    );
+
+    return stopListener;
+  }, [date, isOpen, resource]);
+
+  const bookedSlots = useMemo(() => {
+    const nextBookedSlots = new Set();
+
+    dayBookings
+      .filter((booking) => booking.status === 'active')
+      .forEach((booking) => {
+        TIME_SLOTS.forEach((slot) => {
+          const slotWindow = getBookingWindow(date, slot);
+          if (!slotWindow) return;
+
+          if (datesOverlap(
+            booking.startTime,
+            booking.endTime,
+            slotWindow.startTime,
+            slotWindow.endTime,
+          )) {
+            nextBookedSlots.add(slot);
+          }
+        });
+      });
+
+    return nextBookedSlots;
+  }, [date, dayBookings]);
 
   const handleBook = async () => {
-    if (!selectedSlot || !user) return;
+    if (!selectedSlot || !user || !resource) return;
+
+    const slotWindow = getBookingWindow(date, selectedSlot);
+    if (!slotWindow) return;
+
     try {
       setLoading(true);
       setError('');
+
       await createBooking({
         resourceId: resource.id,
-        resourceName: resource.name,
         userId: user.uid,
-        userName: user.displayName || user.email,
-        date,
-        timeSlot: selectedSlot,
+        startTime: slotWindow.startTime,
+        endTime: slotWindow.endTime,
       });
+
       setSuccess(true);
-      setTimeout(() => {
+
+      window.setTimeout(() => {
         onBooked?.();
         onClose();
       }, 1500);
@@ -80,25 +122,25 @@ export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
           <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="text-emerald-500" size={32} />
           </div>
-          <h4 className="text-lg font-bold text-surface-900 dark:text-white mb-1">Booking Confirmed!</h4>
+          <h4 className="text-lg font-bold text-surface-900 dark:text-white mb-1">Booking Confirmed</h4>
           <p className="text-sm text-surface-500 dark:text-surface-400">
-            {resource.name} • {date} • {selectedSlot}
+            {resource.name} | {date} | {selectedSlot}
           </p>
         </motion.div>
       ) : (
         <div className="space-y-5">
-          {/* Resource info */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-800">
             <div className="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center text-white text-sm font-bold">
               {resource.name[0]}
             </div>
             <div>
               <p className="font-semibold text-surface-900 dark:text-white text-sm">{resource.name}</p>
-              <p className="text-xs text-surface-500 dark:text-surface-400">{resource.type} • {resource.location}</p>
+              <p className="text-xs text-surface-500 dark:text-surface-400">
+                {getResourceTypeLabel(resource.type)} | {resource.location} | {getStatusLabel(resource.status)}
+              </p>
             </div>
           </div>
 
-          {/* Date picker */}
           <div>
             <label className="flex items-center gap-1.5 text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
               <CalendarDays size={15} />
@@ -108,13 +150,12 @@ export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
               type="date"
               value={date}
               min={getToday()}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(event) => setDate(event.target.value)}
               className="input-field"
               id="booking-date"
             />
           </div>
 
-          {/* Time slots */}
           <div>
             <label className="flex items-center gap-1.5 text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
               <Clock size={15} />
@@ -127,19 +168,25 @@ export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {TIME_SLOTS.map((slot) => {
-                  const isBooked = bookedSlots.includes(slot);
+                  const slotWindow = getBookingWindow(date, slot);
+                  const isBooked = bookedSlots.has(slot);
+                  const isPast = slotWindow
+                    ? isPastBookingSlot(slotWindow.startTime, slotWindow.endTime, now)
+                    : false;
                   const isSelected = selectedSlot === slot;
+                  const isDisabled = isBooked || isPast;
+
                   return (
                     <button
                       key={slot}
-                      onClick={() => !isBooked && setSelectedSlot(slot)}
-                      disabled={isBooked}
+                      onClick={() => !isDisabled && setSelectedSlot(slot)}
+                      disabled={isDisabled}
                       className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
-                        isBooked
+                        isDisabled
                           ? 'bg-surface-100 dark:bg-surface-800 text-surface-400 dark:text-surface-600 cursor-not-allowed line-through'
                           : isSelected
-                          ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20'
-                          : 'bg-surface-50 dark:bg-surface-900 text-surface-700 dark:text-surface-300 hover:bg-primary-50 dark:hover:bg-primary-950/50 border border-surface-200 dark:border-surface-700'
+                            ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20'
+                            : 'bg-surface-50 dark:bg-surface-900 text-surface-700 dark:text-surface-300 hover:bg-primary-50 dark:hover:bg-primary-950/50 border border-surface-200 dark:border-surface-700'
                       }`}
                     >
                       {slot.split(' - ')[0]}
@@ -150,7 +197,6 @@ export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
             )}
           </div>
 
-          {/* Error */}
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-sm">
               <AlertCircle size={16} />
@@ -158,7 +204,6 @@ export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
             </div>
           )}
 
-          {/* Book button */}
           <button
             onClick={handleBook}
             disabled={!selectedSlot || loading}

@@ -1,4 +1,4 @@
-export const RESOURCE_TYPES = ['Lab', 'Room', 'Equipment'];
+export const RESOURCE_TYPES = ['lab', 'room', 'equipment'];
 
 export const TIME_SLOTS = [
   '08:00 - 09:00',
@@ -16,21 +16,20 @@ export const TIME_SLOTS = [
 ];
 
 export const AVAILABILITY_STATUS = {
-  AVAILABLE: 'Available',
-  OCCUPIED: 'Occupied',
-  MAINTENANCE: 'Maintenance',
+  AVAILABLE: 'available',
+  OCCUPIED: 'occupied',
 };
 
 export const BOOKING_STATUS = {
-  CONFIRMED: 'Confirmed',
-  COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled',
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
 };
 
 export const RESOURCE_ICONS = {
-  Lab: 'FlaskConical',
-  Room: 'DoorOpen',
-  Equipment: 'Cpu',
+  lab: 'FlaskConical',
+  room: 'DoorOpen',
+  equipment: 'Cpu',
 };
 
 export const NAV_LINKS = [

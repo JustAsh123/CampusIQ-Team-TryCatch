@@ -1,19 +1,19 @@
 import { motion } from 'framer-motion';
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
-import { TrendingUp, Clock, Star, CheckCircle } from 'lucide-react';
+import { CheckCircle, Clock, Star, TrendingUp } from 'lucide-react';
 import PageWrapper from '../components/layout/PageWrapper';
 import StatsCard from '../components/StatsCard';
 import Loader from '../components/ui/Loader';
@@ -21,14 +21,16 @@ import { useResources } from '../hooks/useResources';
 import { useAllBookings } from '../hooks/useBookings';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { CHART_COLORS } from '../utils/constants';
+import { getStatusLabel } from '../utils/helpers';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
+
   return (
     <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl px-3 py-2 shadow-lg text-xs">
       <p className="font-semibold text-surface-900 dark:text-white">{label}</p>
-      {payload.map((entry, i) => (
-        <p key={i} style={{ color: entry.color }} className="mt-0.5">
+      {payload.map((entry, index) => (
+        <p key={index} style={{ color: entry.color }} className="mt-0.5">
           {entry.name}: {entry.value}
         </p>
       ))}
@@ -37,22 +39,23 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Analytics() {
-  const { resources, loading: resLoading } = useResources();
-  const { bookings, loading: bookLoading } = useAllBookings();
+  const { resources, loading: resourcesLoading } = useResources();
+  const { bookings, loading: bookingsLoading } = useAllBookings();
   const analytics = useAnalytics(bookings, resources);
 
-  if (resLoading || bookLoading) return <PageWrapper><Loader text="Loading analytics..." /></PageWrapper>;
+  if (resourcesLoading || bookingsLoading) {
+    return <PageWrapper><Loader text="Loading analytics..." /></PageWrapper>;
+  }
 
   return (
     <PageWrapper>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-surface-900 dark:text-white">Analytics</h1>
         <p className="text-surface-500 dark:text-surface-400 text-sm mt-1">
-          Insights into campus resource usage and trends
+          Live insights from Firestore bookings and current resource availability.
         </p>
       </div>
 
-      {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard icon={TrendingUp} label="Total Bookings" value={analytics.totalBookings} color="primary" index={0} />
         <StatsCard icon={Clock} label="Peak Hour" value={analytics.peakHourLabel} color="warning" index={1} />
@@ -62,11 +65,10 @@ export default function Analytics() {
 
       {analytics.totalBookings === 0 ? (
         <div className="text-center py-16">
-          <p className="text-surface-500 dark:text-surface-400">Not enough data for analytics. Generate demo data from the Dashboard first.</p>
+          <p className="text-surface-500 dark:text-surface-400">Create a few bookings to unlock usage analytics.</p>
         </div>
       ) : (
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Peak Usage Hours */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -91,12 +93,7 @@ export default function Analytics() {
                     axisLine={{ stroke: 'var(--color-surface-200)' }}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar
-                    dataKey="bookings"
-                    fill="url(#barGradient)"
-                    radius={[6, 6, 0, 0]}
-                    name="Bookings"
-                  />
+                  <Bar dataKey="bookings" fill="url(#barGradient)" radius={[6, 6, 0, 0]} name="Bookings" />
                   <defs>
                     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#6366f1" />
@@ -108,7 +105,6 @@ export default function Analytics() {
             </div>
           </motion.div>
 
-          {/* Most Popular Resources */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -136,12 +132,7 @@ export default function Analytics() {
                     axisLine={{ stroke: 'var(--color-surface-200)' }}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar
-                    dataKey="bookings"
-                    fill="url(#hBarGradient)"
-                    radius={[0, 6, 6, 0]}
-                    name="Bookings"
-                  />
+                  <Bar dataKey="bookings" fill="url(#hBarGradient)" radius={[0, 6, 6, 0]} name="Bookings" />
                   <defs>
                     <linearGradient id="hBarGradient" x1="0" y1="0" x2="1" y2="0">
                       <stop offset="0%" stopColor="#0ea5e9" />
@@ -153,7 +144,6 @@ export default function Analytics() {
             </div>
           </motion.div>
 
-          {/* Availability Trends */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -178,28 +168,13 @@ export default function Analytics() {
                     axisLine={{ stroke: 'var(--color-surface-200)' }}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line
-                    type="monotone"
-                    dataKey="bookings"
-                    stroke="#6366f1"
-                    strokeWidth={2.5}
-                    dot={{ fill: '#6366f1', r: 4 }}
-                    name="Bookings"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="available"
-                    stroke="#10b981"
-                    strokeWidth={2.5}
-                    dot={{ fill: '#10b981', r: 4 }}
-                    name="Available"
-                  />
+                  <Line type="monotone" dataKey="bookings" stroke="#6366f1" strokeWidth={2.5} dot={{ fill: '#6366f1', r: 4 }} name="Bookings" />
+                  <Line type="monotone" dataKey="available" stroke="#10b981" strokeWidth={2.5} dot={{ fill: '#10b981', r: 4 }} name="Available" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </motion.div>
 
-          {/* Resource Type Distribution */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -231,14 +206,14 @@ export default function Analytics() {
               </ResponsiveContainer>
             </div>
             <div className="flex justify-center gap-6 mt-2">
-              {analytics.resourceTypeDistribution.map((entry, i) => (
+              {analytics.resourceTypeDistribution.map((entry, index) => (
                 <div key={entry.name} className="flex items-center gap-2 text-xs">
                   <div
                     className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                    style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
                   />
                   <span className="text-surface-600 dark:text-surface-400">
-                    {entry.name} ({entry.value})
+                    {getStatusLabel(entry.name)} ({entry.value})
                   </span>
                 </div>
               ))}

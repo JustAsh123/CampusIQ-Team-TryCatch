@@ -23,7 +23,11 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['error', {
+        varsIgnorePattern: '^[A-Z_]|^motion$|^AnimatePresence$|^Icon$',
+        argsIgnorePattern: '^Icon$',
+      }],
+      'react-refresh/only-export-components': 'off',
     },
   },
 ])

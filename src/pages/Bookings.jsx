@@ -1,33 +1,50 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarCheck, XCircle, Loader2, Calendar, Clock, Building2 } from 'lucide-react';
+import { Calendar, CalendarCheck, Clock, Loader2, XCircle } from 'lucide-react';
 import PageWrapper from '../components/layout/PageWrapper';
 import Loader from '../components/ui/Loader';
 import { useAuth } from '../context/AuthContext';
 import { useUserBookings } from '../hooks/useBookings';
-import { formatDate, getBookingStatusColor } from '../utils/helpers';
+import { useResources } from '../hooks/useResources';
+import {
+  formatDate,
+  formatTimeRange,
+  getBookingStatusColor,
+  getResourceName,
+  getStatusLabel,
+} from '../utils/helpers';
 
 export default function Bookings() {
   const { user } = useAuth();
   const { bookings, loading, cancelBooking } = useUserBookings(user?.uid);
+  const { resources, loading: resourcesLoading } = useResources();
   const [cancelling, setCancelling] = useState(null);
   const [filter, setFilter] = useState('All');
 
-  const handleCancel = async (id) => {
-    setCancelling(id);
+  const resourcesById = useMemo(
+    () => Object.fromEntries(resources.map((resource) => [resource.id, resource])),
+    [resources],
+  );
+
+  const handleCancel = async (bookingId) => {
+    setCancelling(bookingId);
+
     try {
-      await cancelBooking(id);
-    } catch {
-      // Handle error silently
+      await cancelBooking(bookingId);
     } finally {
       setCancelling(null);
     }
   };
 
-  const filtered = filter === 'All' ? bookings : bookings.filter((b) => b.status === filter);
-  const statusTabs = ['All', 'Confirmed', 'Completed', 'Cancelled'];
+  const filteredBookings = filter === 'All'
+    ? bookings
+    : bookings.filter((booking) => booking.status === filter);
 
-  if (loading) return <PageWrapper><Loader text="Loading bookings..." /></PageWrapper>;
+  const statusTabs = ['All', 'active', 'completed', 'cancelled'];
+
+  if (loading || resourcesLoading) {
+    return <PageWrapper><Loader text="Loading bookings..." /></PageWrapper>;
+  }
 
   return (
     <PageWrapper>
@@ -35,15 +52,15 @@ export default function Bookings() {
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-white">My Bookings</h1>
           <p className="text-surface-500 dark:text-surface-400 text-sm mt-1">
-            Manage your resource reservations
+            Your Firestore bookings update here as soon as anything changes.
           </p>
         </div>
       </div>
 
-      {/* Status tabs */}
       <div className="flex bg-surface-100 dark:bg-surface-800 rounded-xl p-1 mb-6 w-fit">
         {statusTabs.map((tab) => {
-          const count = tab === 'All' ? bookings.length : bookings.filter((b) => b.status === tab).length;
+          const count = tab === 'All' ? bookings.length : bookings.filter((booking) => booking.status === tab).length;
+
           return (
             <button
               key={tab}
@@ -54,37 +71,38 @@ export default function Bookings() {
                   : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-white'
               }`}
             >
-              {tab} ({count})
+              {(tab === 'All' ? tab : getStatusLabel(tab))} ({count})
             </button>
           );
         })}
       </div>
 
-      {/* Bookings list */}
-      {filtered.length > 0 ? (
+      {filteredBookings.length > 0 ? (
         <div className="space-y-3">
-          {filtered.map((booking, i) => (
+          {filteredBookings.map((booking, index) => (
             <motion.div
               key={booking.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
+              transition={{ delay: index * 0.05 }}
               className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800"
             >
               <div className="flex items-start gap-4">
                 <div className="w-11 h-11 rounded-xl gradient-bg flex items-center justify-center text-white text-sm font-bold shrink-0">
-                  {booking.resourceName?.[0] || '?'}
+                  {getResourceName(booking.resourceId, resourcesById)[0] || '?'}
                 </div>
                 <div>
-                  <h4 className="font-semibold text-surface-900 dark:text-white">{booking.resourceName}</h4>
+                  <h4 className="font-semibold text-surface-900 dark:text-white">
+                    {getResourceName(booking.resourceId, resourcesById)}
+                  </h4>
                   <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-surface-500 dark:text-surface-400">
                     <span className="flex items-center gap-1">
                       <Calendar size={12} />
-                      {formatDate(booking.date)}
+                      {formatDate(booking.startTime)}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock size={12} />
-                      {booking.timeSlot}
+                      {formatTimeRange(booking.startTime, booking.endTime)}
                     </span>
                   </div>
                 </div>
@@ -92,9 +110,9 @@ export default function Bookings() {
 
               <div className="flex items-center gap-3 sm:ml-auto">
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getBookingStatusColor(booking.status)}`}>
-                  {booking.status}
+                  {getStatusLabel(booking.status)}
                 </span>
-                {booking.status === 'Confirmed' && (
+                {booking.status === 'active' && (
                   <button
                     onClick={() => handleCancel(booking.id)}
                     disabled={cancelling === booking.id}
@@ -119,7 +137,7 @@ export default function Bookings() {
           </div>
           <h3 className="text-lg font-bold text-surface-900 dark:text-white mb-1">No bookings found</h3>
           <p className="text-sm text-surface-500 dark:text-surface-400">
-            {filter !== 'All' ? `No ${filter.toLowerCase()} bookings` : 'Head to Resources to book something'}
+            {filter !== 'All' ? `No ${getStatusLabel(filter).toLowerCase()} bookings right now.` : 'Head to Resources to create a live booking.'}
           </p>
         </div>
       )}

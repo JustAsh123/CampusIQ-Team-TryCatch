@@ -2,18 +2,16 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Firebase configuration — hardcoded (no env vars)
 const firebaseConfig = {
-  apiKey: "AIzaSyBOwNJE8eZqduL1x-EifbDxFJxs0GuzAM8",
-  authDomain: "campusiq-5873b.firebaseapp.com",
-  projectId: "campusiq-5873b",
-  storageBucket: "campusiq-5873b.firebasestorage.app",
-  messagingSenderId: "158451085308",
-  appId: "1:158451085308:web:0a08773fffae7c995c4c79",
-  measurementId: "G-437EDXH8FQ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyBOwNJE8eZqduL1x-EifbDxFJxs0GuzAM8',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'campusiq-5873b.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'campusiq-5873b',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'campusiq-5873b.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '158451085308',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:158451085308:web:0a08773fffae7c995c4c79',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-437EDXH8FQ',
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);

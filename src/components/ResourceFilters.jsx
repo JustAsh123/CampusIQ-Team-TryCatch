@@ -1,12 +1,12 @@
 import { RESOURCE_TYPES } from '../utils/constants';
+import { getStatusLabel } from '../utils/helpers';
 
 export default function ResourceFilters({ filters, onChange }) {
-  const statusOptions = ['All', 'Available', 'Occupied', 'Maintenance'];
+  const statusOptions = ['All', 'available', 'occupied'];
   const typeOptions = ['All', ...RESOURCE_TYPES];
 
   return (
     <div className="flex flex-wrap gap-3">
-      {/* Type filter */}
       <div className="flex items-center gap-2">
         <span className="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider">Type</span>
         <div className="flex bg-surface-100 dark:bg-surface-800 rounded-xl p-0.5">
@@ -20,13 +20,12 @@ export default function ResourceFilters({ filters, onChange }) {
                   : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-white'
               }`}
             >
-              {type}
+              {type === 'All' ? type : getStatusLabel(type)}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Status filter */}
       <div className="flex items-center gap-2">
         <span className="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider">Status</span>
         <div className="flex bg-surface-100 dark:bg-surface-800 rounded-xl p-0.5">
@@ -40,7 +39,7 @@ export default function ResourceFilters({ filters, onChange }) {
                   : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-white'
               }`}
             >
-              {status}
+              {status === 'All' ? status : getStatusLabel(status)}
             </button>
           ))}
         </div>

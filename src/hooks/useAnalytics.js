@@ -1,27 +1,19 @@
 import { useMemo } from 'react';
-import { getHourFromSlot } from '../utils/helpers';
+import {
+  formatDate,
+  getHourFromDate,
+  getResourceName,
+  toDate,
+} from '../utils/helpers';
 
 export function useAnalytics(bookings, resources) {
-  const analytics = useMemo(() => {
-    if (!bookings.length) {
-      return {
-        peakHours: [],
-        mostUsedResources: [],
-        availabilityTrends: [],
-        resourceTypeDistribution: [],
-        totalBookings: 0,
-        activeBookings: 0,
-        availableNow: 0,
-        peakHourLabel: 'N/A',
-        mostPopularResource: 'N/A',
-      };
-    }
+  return useMemo(() => {
+    const nonCancelledBookings = bookings.filter((booking) => booking.status !== 'cancelled');
+    const resourcesById = Object.fromEntries(resources.map((resource) => [resource.id, resource]));
 
-    // Peak hours - count bookings per hour
     const hourCounts = {};
-    bookings.forEach((b) => {
-      if (b.status === 'Cancelled') return;
-      const hour = getHourFromSlot(b.timeSlot);
+    nonCancelledBookings.forEach((booking) => {
+      const hour = getHourFromDate(booking.startTime);
       hourCounts[hour] = (hourCounts[hour] || 0) + 1;
     });
 
@@ -30,24 +22,24 @@ export function useAnalytics(bookings, resources) {
         hour: `${hour}:00`,
         bookings: count,
       }))
-      .sort((a, b) => parseInt(a.hour) - parseInt(b.hour));
+      .sort((a, b) => parseInt(a.hour, 10) - parseInt(b.hour, 10));
 
-    // Most used resources
     const resourceCounts = {};
-    bookings.forEach((b) => {
-      if (b.status === 'Cancelled') return;
-      resourceCounts[b.resourceName] = (resourceCounts[b.resourceName] || 0) + 1;
+    nonCancelledBookings.forEach((booking) => {
+      resourceCounts[booking.resourceId] = (resourceCounts[booking.resourceId] || 0) + 1;
     });
 
     const mostUsedResources = Object.entries(resourceCounts)
-      .map(([name, count]) => ({ name, bookings: count }))
+      .map(([resourceId, count]) => ({
+        name: getResourceName(resourceId, resourcesById),
+        bookings: count,
+      }))
       .sort((a, b) => b.bookings - a.bookings)
       .slice(0, 8);
 
-    // Resource type distribution
-    const typeCounts = { Lab: 0, Room: 0, Equipment: 0 };
-    resources.forEach((r) => {
-      typeCounts[r.type] = (typeCounts[r.type] || 0) + 1;
+    const typeCounts = { lab: 0, room: 0, equipment: 0 };
+    resources.forEach((resource) => {
+      typeCounts[resource.type] = (typeCounts[resource.type] || 0) + 1;
     });
 
     const resourceTypeDistribution = Object.entries(typeCounts).map(([name, value]) => ({
@@ -55,35 +47,33 @@ export function useAnalytics(bookings, resources) {
       value,
     }));
 
-    // Availability trends (last 7 days)
     const availabilityTrends = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
+    for (let index = 6; index >= 0; index -= 1) {
+      const date = new Date();
+      date.setDate(date.getDate() - index);
+      const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayKey = formatDate(date);
 
-      const dayBookings = bookings.filter(
-        (b) => b.date === dateStr && b.status !== 'Cancelled'
-      ).length;
+      const dayBookings = nonCancelledBookings.filter((booking) => (
+        formatDate(booking.startTime) === dayKey
+      ));
+
+      const uniqueResourceIds = new Set(dayBookings.map((booking) => booking.resourceId));
 
       availabilityTrends.push({
         day: dayLabel,
-        bookings: dayBookings,
-        available: Math.max(0, resources.length - dayBookings),
+        bookings: dayBookings.length,
+        available: Math.max(0, resources.length - uniqueResourceIds.size),
       });
     }
 
-    // Summary stats
-    const activeBookings = bookings.filter((b) => b.status === 'Confirmed').length;
-    const availableNow = resources.filter((r) => r.status === 'Available').length;
+    const activeBookings = bookings.filter((booking) => booking.status === 'active').length;
+    const availableNow = resources.filter((resource) => resource.status === 'available').length;
 
     const peakEntry = peakHours.reduce(
-      (max, h) => (h.bookings > max.bookings ? h : max),
-      { hour: 'N/A', bookings: 0 }
+      (highest, hourEntry) => (hourEntry.bookings > highest.bookings ? hourEntry : highest),
+      { hour: 'N/A', bookings: 0 },
     );
-
-    const mostPopularResource = mostUsedResources.length > 0 ? mostUsedResources[0].name : 'N/A';
 
     return {
       peakHours,
@@ -94,9 +84,8 @@ export function useAnalytics(bookings, resources) {
       activeBookings,
       availableNow,
       peakHourLabel: peakEntry.hour,
-      mostPopularResource,
+      mostPopularResource: mostUsedResources[0]?.name ?? 'N/A',
+      latestBookingTime: toDate(bookings[0]?.startTime) ?? null,
     };
   }, [bookings, resources]);
-
-  return analytics;
 }

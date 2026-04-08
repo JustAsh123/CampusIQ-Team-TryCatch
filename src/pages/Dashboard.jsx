@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Building2,
-  CheckCircle,
-  CalendarCheck,
-  Clock,
   ArrowRight,
+  Building2,
+  CalendarCheck,
+  CheckCircle,
+  Clock,
   Database,
   Loader2,
   TrendingUp,
@@ -19,54 +19,69 @@ import { useResources } from '../hooks/useResources';
 import { useAllBookings } from '../hooks/useBookings';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useAuth } from '../context/AuthContext';
-import { seedDatabase } from '../services/seedService';
-import { formatDate } from '../utils/helpers';
+import { seedResourcesIfEmpty } from '../services/seedService';
+import {
+  formatDate,
+  formatTimeRange,
+  getResourceName,
+  getStatusLabel,
+} from '../utils/helpers';
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { resources, loading: resLoading, refetch: refetchResources } = useResources();
-  const { bookings, loading: bookLoading, refetch: refetchBookings } = useAllBookings();
+  const { resources, loading: resourcesLoading } = useResources();
+  const { bookings, loading: bookingsLoading } = useAllBookings();
   const analytics = useAnalytics(bookings, resources);
   const [seeding, setSeeding] = useState(false);
   const [seedStatus, setSeedStatus] = useState('');
   const [selectedResource, setSelectedResource] = useState(null);
 
+  const resourcesById = useMemo(
+    () => Object.fromEntries(resources.map((resource) => [resource.id, resource])),
+    [resources],
+  );
+
   const handleSeed = async () => {
-    if (seeding) return;
+    if (seeding || resources.length > 0) return;
+
     setSeeding(true);
+
     try {
-      await seedDatabase((msg) => setSeedStatus(msg));
-      await refetchResources();
-      await refetchBookings();
-      setTimeout(() => setSeedStatus(''), 3000);
+      const result = await seedResourcesIfEmpty((message) => setSeedStatus(message));
+      setSeedStatus(
+        result.seeded
+          ? `Seeded ${result.count} campus resources.`
+          : 'Resources are already available in Firestore.',
+      );
+
+      window.setTimeout(() => setSeedStatus(''), 3000);
     } catch {
-      setSeedStatus('Failed to seed data');
+      setSeedStatus('Failed to seed initial resources.');
     } finally {
       setSeeding(false);
     }
   };
 
   const recentBookings = bookings
-    .filter((b) => b.status === 'Confirmed')
+    .filter((booking) => booking.status !== 'cancelled')
     .slice(0, 5);
 
   return (
     <PageWrapper>
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-white">
-            Welcome back, {user?.displayName?.split(' ')[0] || 'there'} 👋
+            Welcome back, {user?.displayName?.split(' ')[0] || 'there'}
           </h1>
           <p className="text-surface-500 dark:text-surface-400 text-sm mt-1">
-            Here's what's happening with your campus resources today.
+            Your resource dashboard is now driven by live Firestore data.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={handleSeed}
-            disabled={seeding}
-            className="btn-secondary text-sm"
+            disabled={seeding || resources.length > 0}
+            className="btn-secondary text-sm disabled:opacity-70 disabled:cursor-not-allowed"
             id="seed-data-btn"
           >
             {seeding ? (
@@ -77,7 +92,7 @@ export default function Dashboard() {
             ) : (
               <>
                 <Database size={15} />
-                {resources.length > 0 ? 'Reseed Data' : 'Generate Demo Data'}
+                {resources.length > 0 ? 'Resources Seeded' : 'Seed Initial Resources'}
               </>
             )}
           </button>
@@ -94,7 +109,6 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard
           icon={Building2}
@@ -126,7 +140,6 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Quick insights */}
       {resources.length > 0 && (
         <div className="grid lg:grid-cols-2 gap-4 mb-8">
           <motion.div
@@ -178,27 +191,30 @@ export default function Dashboard() {
             </div>
             {recentBookings.length > 0 ? (
               <div className="space-y-2.5">
-                {recentBookings.map((b) => (
-                  <div key={b.id} className="flex items-center justify-between p-3 rounded-xl bg-surface-50 dark:bg-surface-900">
+                {recentBookings.map((booking) => (
+                  <div key={booking.id} className="flex items-center justify-between p-3 rounded-xl bg-surface-50 dark:bg-surface-900">
                     <div>
-                      <p className="text-sm font-medium text-surface-900 dark:text-white">{b.resourceName}</p>
-                      <p className="text-xs text-surface-500 dark:text-surface-400">{b.userName}</p>
+                      <p className="text-sm font-medium text-surface-900 dark:text-white">
+                        {getResourceName(booking.resourceId, resourcesById)}
+                      </p>
+                      <p className="text-xs text-surface-500 dark:text-surface-400">
+                        {getStatusLabel(booking.status)}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-medium text-surface-700 dark:text-surface-300">{formatDate(b.date)}</p>
-                      <p className="text-xs text-surface-400">{b.timeSlot}</p>
+                      <p className="text-xs font-medium text-surface-700 dark:text-surface-300">{formatDate(booking.startTime)}</p>
+                      <p className="text-xs text-surface-400">{formatTimeRange(booking.startTime, booking.endTime)}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-surface-400 text-center py-6">No recent bookings</p>
+              <p className="text-sm text-surface-400 text-center py-6">No bookings yet. Create one from the Resources page.</p>
             )}
           </motion.div>
         </div>
       )}
 
-      {/* Quick access resources */}
       {resources.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -209,13 +225,13 @@ export default function Dashboard() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {resources
-              .filter((r) => r.status === 'Available')
+              .filter((resource) => resource.status === 'available')
               .slice(0, 6)
-              .map((r, i) => (
+              .map((resource, index) => (
                 <ResourceCard
-                  key={r.id}
-                  resource={r}
-                  index={i}
+                  key={resource.id}
+                  resource={resource}
+                  index={index}
                   onClick={setSelectedResource}
                 />
               ))}
@@ -223,8 +239,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Empty state */}
-      {!resLoading && resources.length === 0 && (
+      {!resourcesLoading && !bookingsLoading && resources.length === 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -233,13 +248,13 @@ export default function Dashboard() {
           <div className="w-20 h-20 rounded-2xl bg-surface-100 dark:bg-surface-800 flex items-center justify-center mx-auto mb-4">
             <Database size={32} className="text-surface-400" />
           </div>
-          <h3 className="text-lg font-bold text-surface-900 dark:text-white mb-2">No data yet</h3>
+          <h3 className="text-lg font-bold text-surface-900 dark:text-white mb-2">No resources yet</h3>
           <p className="text-surface-500 dark:text-surface-400 mb-6 max-w-sm mx-auto">
-            Click "Generate Demo Data" to populate the database with realistic campus resources and bookings.
+            Seed the initial Firestore resources once, then bookings and availability will update in real time.
           </p>
           <button onClick={handleSeed} disabled={seeding} className="btn-primary">
             <Database size={16} />
-            Generate Demo Data
+            Seed Initial Resources
           </button>
         </motion.div>
       )}
@@ -248,10 +263,6 @@ export default function Dashboard() {
         isOpen={!!selectedResource}
         onClose={() => setSelectedResource(null)}
         resource={selectedResource}
-        onBooked={() => {
-          refetchResources();
-          refetchBookings();
-        }}
       />
     </PageWrapper>
   );
