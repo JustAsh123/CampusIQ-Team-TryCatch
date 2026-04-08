@@ -22,7 +22,7 @@ export default function StatsCard({ icon: Icon, label, value, color = 'primary',
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1, duration: 0.4 }}
-      className="relative overflow-hidden bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800 p-5"
+      className="relative overflow-hidden bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-5 transition-colors duration-300"
     >
       {/* Subtle gradient accent */}
       <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl ${colorMap[color]} opacity-5 rounded-bl-full`} />

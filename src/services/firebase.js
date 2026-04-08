@@ -16,5 +16,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+if (!db) {
+  throw new Error('Firestore initialization failed: db is undefined.');
+}
+
 export { auth, db };
 export default app;

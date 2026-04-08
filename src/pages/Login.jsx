@@ -69,12 +69,12 @@ export default function Login() {
         </div>
 
         {/* Form card */}
-        <div className="bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800 p-7 shadow-xl shadow-surface-900/5 dark:shadow-black/20">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-7 shadow-xl shadow-surface-900/5 dark:shadow-black/20">
           {/* Google sign in */}
           <button
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-200 font-medium text-sm hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors mb-6"
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-gray-900 text-surface-700 dark:text-surface-200 font-medium text-sm hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors mb-6"
             id="google-signin-btn"
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5">
@@ -91,7 +91,7 @@ export default function Login() {
               <div className="w-full border-t border-surface-200 dark:border-surface-700" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-white dark:bg-surface-850 px-3 text-surface-400">or sign in with email</span>
+              <span className="bg-white dark:bg-gray-900 px-3 text-surface-400">or sign in with email</span>
             </div>
           </div>
 

@@ -21,17 +21,16 @@ import { useResources } from '../hooks/useResources';
 import { useAllBookings } from '../hooks/useBookings';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { CHART_COLORS } from '../utils/constants';
-import { getStatusLabel } from '../utils/helpers';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl px-3 py-2 shadow-lg text-xs">
+    <div className="bg-white dark:bg-gray-900 border border-surface-200 dark:border-surface-700 rounded-xl px-3 py-2 shadow-lg text-xs">
       <p className="font-semibold text-surface-900 dark:text-white">{label}</p>
       {payload.map((entry, index) => (
         <p key={index} style={{ color: entry.color }} className="mt-0.5">
-          {entry.name}: {entry.value}
+          {entry.name || entry.payload?.name}: {entry.value}
         </p>
       ))}
     </div>
@@ -52,16 +51,68 @@ export default function Analytics() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-surface-900 dark:text-white">Analytics</h1>
         <p className="text-surface-500 dark:text-surface-400 text-sm mt-1">
-          Live insights from Firestore bookings and current resource availability.
+          Synthesized insights generated from your resource catalog.
         </p>
       </div>
 
+      {analytics.isSynthetic && (
+        <div className="mb-6 bg-gray-100 dark:bg-gray-800 border border-surface-200 dark:border-surface-700 rounded-2xl p-4 transition-colors duration-300">
+          <p className="text-sm font-semibold text-surface-900 dark:text-white">
+            Showing synthesized demo analytics
+          </p>
+          <p className="text-xs text-surface-600 dark:text-surface-300 mt-1">
+            Charts and insights below are generated from your resource catalog to keep the dashboard meaningful.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatsCard icon={TrendingUp} label="Total Bookings" value={analytics.totalBookings} color="primary" index={0} />
-        <StatsCard icon={Clock} label="Peak Hour" value={analytics.peakHourLabel} color="warning" index={1} />
-        <StatsCard icon={Star} label="Most Popular" value={analytics.mostPopularResource?.split(' ').slice(0, 2).join(' ') || 'N/A'} color="accent" index={2} />
-        <StatsCard icon={CheckCircle} label="Available Now" value={`${analytics.availableNow}/${resources.length}`} color="success" index={3} />
+        <StatsCard
+          icon={TrendingUp}
+          label={analytics.isSynthetic ? 'Total Bookings (Demo)' : 'Total Bookings'}
+          value={analytics.totalBookings}
+          color="primary"
+          index={0}
+        />
+        <StatsCard
+          icon={CheckCircle}
+          label="Currently Active"
+          value={analytics.activeBookings}
+          color="success"
+          index={1}
+        />
+        <StatsCard
+          icon={Star}
+          label="Most Popular"
+          value={analytics.mostPopularResource}
+          color="accent"
+          index={2}
+        />
+        <StatsCard
+          icon={Clock}
+          label="Peak Usage Time"
+          value={analytics.peakTimeRangeLabel}
+          color="warning"
+          index={3}
+        />
       </div>
+
+      {analytics.totalBookings > 0 && (
+        <div className="grid lg:grid-cols-2 gap-4 mb-8">
+          <div className="bg-gray-100 dark:bg-gray-800 border border-surface-200 dark:border-surface-700 rounded-2xl p-5 transition-colors duration-300">
+            <p className="text-sm font-semibold text-surface-600 dark:text-surface-300">Peak time</p>
+            <p className="text-lg font-bold text-surface-900 dark:text-white mt-1">
+              {`Peak time: ${analytics.peakTimeRangeLabel}`}
+            </p>
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-800 border border-surface-200 dark:border-surface-700 rounded-2xl p-5 transition-colors duration-300">
+            <p className="text-sm font-semibold text-surface-600 dark:text-surface-300">Most popular</p>
+            <p className="text-lg font-bold text-surface-900 dark:text-white mt-1">
+              {`Most popular: ${analytics.mostPopularResource}`}
+            </p>
+          </div>
+        </div>
+      )}
 
       {analytics.totalBookings === 0 ? (
         <div className="text-center py-16">
@@ -73,11 +124,11 @@ export default function Analytics() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800 p-6"
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-6 transition-colors duration-300"
           >
             <h3 className="font-bold text-surface-900 dark:text-white mb-4 flex items-center gap-2">
               <Clock size={18} className="text-amber-500" />
-              Peak Usage Hours
+              Bookings per Hour
             </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -109,11 +160,11 @@ export default function Analytics() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800 p-6"
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-6 transition-colors duration-300"
           >
             <h3 className="font-bold text-surface-900 dark:text-white mb-4 flex items-center gap-2">
               <Star size={18} className="text-primary-500" />
-              Most Popular Resources
+              Usage per Resource
             </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -148,7 +199,7 @@ export default function Analytics() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800 p-6"
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-6 transition-colors duration-300"
           >
             <h3 className="font-bold text-surface-900 dark:text-white mb-4 flex items-center gap-2">
               <TrendingUp size={18} className="text-emerald-500" />
@@ -179,25 +230,25 @@ export default function Analytics() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800 p-6"
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-6 transition-colors duration-300"
           >
             <h3 className="font-bold text-surface-900 dark:text-white mb-4 flex items-center gap-2">
               <CheckCircle size={18} className="text-purple-500" />
-              Resource Type Distribution
+              Resource Usage Distribution
             </h3>
             <div className="h-64 flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={analytics.resourceTypeDistribution}
+                    data={analytics.resourceUsageDistribution}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
                     outerRadius={90}
                     paddingAngle={4}
-                    dataKey="value"
+                    dataKey="bookings"
                   >
-                    {analytics.resourceTypeDistribution.map((entry, index) => (
+                    {analytics.resourceUsageDistribution.map((entry, index) => (
                       <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Pie>
@@ -206,14 +257,14 @@ export default function Analytics() {
               </ResponsiveContainer>
             </div>
             <div className="flex justify-center gap-6 mt-2">
-              {analytics.resourceTypeDistribution.map((entry, index) => (
+              {analytics.resourceUsageDistribution.map((entry, index) => (
                 <div key={entry.name} className="flex items-center gap-2 text-xs">
                   <div
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
                   />
                   <span className="text-surface-600 dark:text-surface-400">
-                    {getStatusLabel(entry.name)} ({entry.value})
+                    {entry.name} ({entry.bookings})
                   </span>
                 </div>
               ))}

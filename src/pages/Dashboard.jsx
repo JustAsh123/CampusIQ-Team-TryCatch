@@ -19,7 +19,6 @@ import { useResources } from '../hooks/useResources';
 import { useAllBookings } from '../hooks/useBookings';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useAuth } from '../context/AuthContext';
-import { seedResourcesIfEmpty } from '../services/seedService';
 import {
   formatDate,
   formatTimeRange,
@@ -32,35 +31,12 @@ export default function Dashboard() {
   const { resources, loading: resourcesLoading } = useResources();
   const { bookings, loading: bookingsLoading } = useAllBookings();
   const analytics = useAnalytics(bookings, resources);
-  const [seeding, setSeeding] = useState(false);
-  const [seedStatus, setSeedStatus] = useState('');
   const [selectedResource, setSelectedResource] = useState(null);
 
   const resourcesById = useMemo(
     () => Object.fromEntries(resources.map((resource) => [resource.id, resource])),
     [resources],
   );
-
-  const handleSeed = async () => {
-    if (seeding || resources.length > 0) return;
-
-    setSeeding(true);
-
-    try {
-      const result = await seedResourcesIfEmpty((message) => setSeedStatus(message));
-      setSeedStatus(
-        result.seeded
-          ? `Seeded ${result.count} campus resources.`
-          : 'Resources are already available in Firestore.',
-      );
-
-      window.setTimeout(() => setSeedStatus(''), 3000);
-    } catch {
-      setSeedStatus('Failed to seed initial resources.');
-    } finally {
-      setSeeding(false);
-    }
-  };
 
   const recentBookings = bookings
     .filter((booking) => booking.status !== 'cancelled')
@@ -77,37 +53,7 @@ export default function Dashboard() {
             Your resource dashboard is now driven by live Firestore data.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSeed}
-            disabled={seeding || resources.length > 0}
-            className="btn-secondary text-sm disabled:opacity-70 disabled:cursor-not-allowed"
-            id="seed-data-btn"
-          >
-            {seeding ? (
-              <>
-                <Loader2 className="animate-spin" size={15} />
-                {seedStatus || 'Seeding...'}
-              </>
-            ) : (
-              <>
-                <Database size={15} />
-                {resources.length > 0 ? 'Resources Seeded' : 'Seed Initial Resources'}
-              </>
-            )}
-          </button>
-        </div>
       </div>
-
-      {seedStatus && !seeding && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium border border-emerald-200 dark:border-emerald-800"
-        >
-          {seedStatus}
-        </motion.div>
-      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard
@@ -146,7 +92,7 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800 p-5"
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-5 transition-colors duration-300"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-surface-900 dark:text-white flex items-center gap-2">
@@ -178,7 +124,7 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800 p-5"
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-5 transition-colors duration-300"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-surface-900 dark:text-white flex items-center gap-2">
@@ -245,17 +191,13 @@ export default function Dashboard() {
           animate={{ opacity: 1 }}
           className="text-center py-20"
         >
-          <div className="w-20 h-20 rounded-2xl bg-surface-100 dark:bg-surface-800 flex items-center justify-center mx-auto mb-4">
+          <div className="w-20 h-20 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
             <Database size={32} className="text-surface-400" />
           </div>
           <h3 className="text-lg font-bold text-surface-900 dark:text-white mb-2">No resources yet</h3>
           <p className="text-surface-500 dark:text-surface-400 mb-6 max-w-sm mx-auto">
-            Seed the initial Firestore resources once, then bookings and availability will update in real time.
+            If resources are missing, they will be seeded automatically on first app load.
           </p>
-          <button onClick={handleSeed} disabled={seeding} className="btn-primary">
-            <Database size={16} />
-            Seed Initial Resources
-          </button>
         </motion.div>
       )}
 

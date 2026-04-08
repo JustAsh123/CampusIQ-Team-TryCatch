@@ -1,7 +1,10 @@
 export function toDate(value) {
   if (!value) return null;
-  if (value instanceof Date) return value;
-  if (typeof value?.toDate === 'function') return value.toDate();
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value?.toDate === 'function') {
+    const converted = value.toDate();
+    return converted && !Number.isNaN(converted.getTime()) ? converted : null;
+  }
 
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;

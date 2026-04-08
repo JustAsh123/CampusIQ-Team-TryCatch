@@ -57,7 +57,7 @@ export default function Bookings() {
         </div>
       </div>
 
-      <div className="flex bg-surface-100 dark:bg-surface-800 rounded-xl p-1 mb-6 w-fit">
+      <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 mb-6 w-fit">
         {statusTabs.map((tab) => {
           const count = tab === 'All' ? bookings.length : bookings.filter((booking) => booking.status === tab).length;
 
@@ -85,7 +85,7 @@ export default function Bookings() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800"
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 transition-colors duration-300"
             >
               <div className="flex items-start gap-4">
                 <div className="w-11 h-11 rounded-xl gradient-bg flex items-center justify-center text-white text-sm font-bold shrink-0">
@@ -132,7 +132,7 @@ export default function Bookings() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <div className="w-16 h-16 rounded-2xl bg-surface-100 dark:bg-surface-800 flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
             <CalendarCheck size={28} className="text-surface-400" />
           </div>
           <h3 className="text-lg font-bold text-surface-900 dark:text-white mb-1">No bookings found</h3>

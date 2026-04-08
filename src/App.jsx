@@ -1,9 +1,10 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Loader from './components/ui/Loader';
+import { seedResourcesIfEmpty } from './services/seedService';
 
 // Lazy-loaded pages
 const Landing = lazy(() => import('./pages/Landing'));
@@ -48,6 +49,15 @@ function AppRoutes() {
 }
 
 export default function App() {
+  // Seed campus resources automatically (once per runtime), without any UI trigger.
+  useEffect(() => {
+    seedResourcesIfEmpty().catch((err) => {
+      // Avoid breaking the app on initial seed failures; bookings will still work if data exists.
+      // eslint-disable-next-line no-console
+      console.error('[App] seedResourcesIfEmpty failed:', err);
+    });
+  }, []);
+
   return (
     <BrowserRouter>
       <ThemeProvider>

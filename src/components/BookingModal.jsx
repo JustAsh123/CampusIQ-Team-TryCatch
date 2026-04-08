@@ -36,7 +36,7 @@ export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
   }, [isOpen, resource]);
 
   useEffect(() => {
-    if (!isOpen || !resource) return undefined;
+    if (!isOpen || !resource?.id) return undefined;
 
     setSlotsLoading(true);
     const stopListener = listenToResourceBookings(
@@ -80,20 +80,28 @@ export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
   }, [date, dayBookings]);
 
   const handleBook = async () => {
-    if (!selectedSlot || !user || !resource) return;
+    if (!selectedSlot || !user || !resource?.id) return;
 
     const slotWindow = getBookingWindow(date, selectedSlot);
     if (!slotWindow) return;
+
+    const resourceId = resource?.id;
+    const userId = user?.uid;
+    const startTime = slotWindow?.startTime;
+    const endTime = slotWindow?.endTime;
+
+    if (!resourceId || !startTime || !endTime) return;
+    if (!userId) return;
 
     try {
       setLoading(true);
       setError('');
 
       await createBooking({
-        resourceId: resource.id,
-        userId: user.uid,
-        startTime: slotWindow.startTime,
-        endTime: slotWindow.endTime,
+        resourceId,
+        userId,
+        startTime,
+        endTime,
       });
 
       setSuccess(true);
@@ -103,7 +111,9 @@ export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
         onClose();
       }, 1500);
     } catch (err) {
-      setError(err.message);
+      // eslint-disable-next-line no-console
+      console.error('[BookingModal] createBooking failed:', err);
+      setError(err?.message || 'Failed to create booking. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -181,9 +191,9 @@ export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
                       key={slot}
                       onClick={() => !isDisabled && setSelectedSlot(slot)}
                       disabled={isDisabled}
-                      className={`px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                      className={`px-2 py-2 rounded-lg text-xs font-medium transition-colors duration-300 transition-all ${
                         isDisabled
-                          ? 'bg-surface-100 dark:bg-surface-800 text-surface-400 dark:text-surface-600 cursor-not-allowed line-through'
+                          ? 'bg-gray-100 dark:bg-gray-800 text-surface-400 dark:text-surface-600 cursor-not-allowed line-through'
                           : isSelected
                             ? 'bg-primary-600 text-white shadow-md shadow-primary-500/20'
                             : 'bg-surface-50 dark:bg-surface-900 text-surface-700 dark:text-surface-300 hover:bg-primary-50 dark:hover:bg-primary-950/50 border border-surface-200 dark:border-surface-700'
@@ -207,7 +217,7 @@ export default function BookingModal({ isOpen, onClose, resource, onBooked }) {
           <button
             onClick={handleBook}
             disabled={!selectedSlot || loading}
-            className="btn-primary w-full py-3"
+            className="btn-primary w-full py-3 transition-colors duration-300"
             id="confirm-booking-btn"
           >
             {loading ? (

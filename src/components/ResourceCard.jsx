@@ -28,7 +28,7 @@ export default function ResourceCard({ resource, onClick, index = 0 }) {
       transition={{ delay: index * 0.05, duration: 0.4 }}
       whileHover={{ y: -4, boxShadow: '0 12px 40px rgba(0,0,0,0.12)' }}
       onClick={() => onClick?.(resource)}
-      className="group cursor-pointer bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800 overflow-hidden hover:border-primary-300 dark:hover:border-primary-700 transition-colors"
+      className="group cursor-pointer bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 overflow-hidden hover:border-primary-300 dark:hover:border-primary-700 transition-colors duration-300"
     >
       <div className={`h-1 w-full ${resource.status === 'available' ? 'bg-emerald-500' : 'bg-red-500'}`} />
 
@@ -46,7 +46,7 @@ export default function ResourceCard({ resource, onClick, index = 0 }) {
           <h3 className="font-bold text-surface-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
             {resource.name}
           </h3>
-          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-400">
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-gray-100 dark:bg-gray-800 text-surface-600 dark:text-surface-400">
             {getResourceTypeLabel(resource.type)}
           </span>
         </div>

@@ -61,7 +61,7 @@ export default function Resources() {
             className={`p-2.5 rounded-xl border transition-colors ${
               showFilters
                 ? 'bg-primary-50 dark:bg-primary-950/30 border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400'
-                : 'bg-white dark:bg-surface-800 border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-400'
+                : 'bg-white dark:bg-gray-900 border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-400'
             }`}
             id="toggle-filters-btn"
           >

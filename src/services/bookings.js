@@ -1,11 +1,11 @@
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
   onSnapshot,
   query,
-  runTransaction,
   serverTimestamp,
   Timestamp,
   updateDoc,
@@ -23,6 +23,13 @@ import {
 const BOOKINGS_COLLECTION = 'bookings';
 const RESOURCES_COLLECTION = 'resources';
 
+function assertDb() {
+  if (!db) {
+    // Firestore functions (collection/doc) will throw with "undefined.path" if `db` is missing.
+    throw new Error('Firestore is not initialized (db is undefined).');
+  }
+}
+
 function normalizeBooking(snapshot) {
   const data = snapshot.data();
 
@@ -38,6 +45,7 @@ function normalizeBooking(snapshot) {
 }
 
 function buildBookingsQuery(filters = {}) {
+  assertDb();
   const constraints = [];
 
   if (filters.userId) {
@@ -74,13 +82,14 @@ function applyBookingFilters(bookings, filters = {}) {
 }
 
 async function reconcileResourceStatuses(resourceIds = null, now = new Date()) {
+  assertDb();
   const [resourcesSnapshot, activeBookingsSnapshot] = await Promise.all([
     getDocs(collection(db, RESOURCES_COLLECTION)),
     getDocs(buildBookingsQuery({ status: 'active' })),
   ]);
 
   const activeBookings = activeBookingsSnapshot.docs.map(normalizeBooking);
-  const relevantIds = resourceIds ? new Set(resourceIds) : null;
+  const relevantIds = resourceIds ? new Set(resourceIds.filter(Boolean)) : null;
   const batch = writeBatch(db);
   let hasChanges = false;
 
@@ -137,9 +146,14 @@ export function listenToResourceBookings(resourceId, date, callback, onError) {
 }
 
 export async function createBooking({ userId, resourceId, startTime, endTime }) {
+  assertDb();
+
+  if (!resourceId || !userId || !startTime || !endTime) {
+    throw new Error('Missing required booking fields: resourceId, userId, startTime, endTime.');
+  }
+
   const normalizedStartTime = toDate(startTime);
   const normalizedEndTime = toDate(endTime);
-  const bookingRef = doc(collection(db, BOOKINGS_COLLECTION));
 
   if (!normalizedStartTime || !normalizedEndTime || normalizedStartTime >= normalizedEndTime) {
     throw new Error('Please choose a valid booking time.');
@@ -149,8 +163,10 @@ export async function createBooking({ userId, resourceId, startTime, endTime }) 
     throw new Error('Please choose a future time slot.');
   }
 
-  await runTransaction(db, async (transaction) => {
-    const conflictingBookingsSnapshot = await transaction.get(
+  try {
+    // NOTE: Firestore transactions do not support reading queries reliably in the modular SDK.
+    // We do an explicit conflict check, then create the booking.
+    const conflictingBookingsSnapshot = await getDocs(
       buildBookingsQuery({ resourceId, status: 'active' }),
     );
 
@@ -167,7 +183,7 @@ export async function createBooking({ userId, resourceId, startTime, endTime }) 
       throw new Error('That resource is already booked for the selected time.');
     }
 
-    transaction.set(bookingRef, {
+    const createdRef = await addDoc(collection(db, BOOKINGS_COLLECTION), {
       userId,
       resourceId,
       startTime: Timestamp.fromDate(normalizedStartTime),
@@ -175,15 +191,25 @@ export async function createBooking({ userId, resourceId, startTime, endTime }) 
       status: 'active',
       createdAt: serverTimestamp(),
     });
-  });
 
-  await reconcileResourceStatuses([resourceId]);
+    await reconcileResourceStatuses([resourceId]);
 
-  const createdBooking = await getDoc(bookingRef);
-  return normalizeBooking(createdBooking);
+    const createdBooking = await getDoc(createdRef);
+    if (!createdBooking.exists()) {
+      throw new Error('Booking was not created.');
+    }
+    return normalizeBooking(createdBooking);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[services/bookings] createBooking failed:', err);
+    throw err;
+  }
 }
 
 export async function cancelBooking(bookingId) {
+  assertDb();
+  if (!bookingId) throw new Error('Missing bookingId.');
+
   const bookingRef = doc(db, BOOKINGS_COLLECTION, bookingId);
   const bookingSnapshot = await getDoc(bookingRef);
 
@@ -198,6 +224,7 @@ export async function cancelBooking(bookingId) {
 }
 
 export async function syncExpiredBookings(now = new Date()) {
+  assertDb();
   const snapshot = await getDocs(buildBookingsQuery({ status: 'active' }));
   const expiredBookings = snapshot.docs
     .map(normalizeBooking)

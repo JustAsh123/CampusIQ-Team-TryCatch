@@ -136,7 +136,7 @@ export default function Landing() {
               viewport={{ once: true }}
               transition={{ delay: i * 0.15 }}
               whileHover={{ y: -6 }}
-              className="relative bg-white dark:bg-surface-850 rounded-2xl border border-surface-200 dark:border-surface-800 p-7 overflow-hidden group"
+              className="relative bg-white dark:bg-gray-900 rounded-2xl border border-surface-200 dark:border-surface-800 p-7 overflow-hidden group"
             >
               <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-lg shadow-primary-500/10`}>
                 <feature.icon size={22} className="text-white" />

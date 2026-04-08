@@ -43,6 +43,12 @@ const INITIAL_RESOURCES = [
 ];
 
 export async function seedResourcesIfEmpty(progressCallback) {
+  // Ensure seeding only runs once per runtime (React StrictMode may double-invoke effects).
+  if (seedResourcesIfEmpty._seedOncePromise) {
+    return seedResourcesIfEmpty._seedOncePromise;
+  }
+
+  seedResourcesIfEmpty._seedOncePromise = (async () => {
   progressCallback?.('Checking Firestore resources...');
 
   const resourcesSnapshot = await getDocs(collection(db, 'resources'));
@@ -69,4 +75,15 @@ export async function seedResourcesIfEmpty(progressCallback) {
   progressCallback?.(`Seeded ${INITIAL_RESOURCES.length} resources.`);
 
   return { seeded: true, count: INITIAL_RESOURCES.length };
+  })().catch((err) => {
+    // Allow retry if the seed attempt fails.
+    seedResourcesIfEmpty._seedOncePromise = null;
+    throw err;
+  });
+
+  return seedResourcesIfEmpty._seedOncePromise;
 }
+
+// Private runtime cache to ensure single seeding.
+// (We attach to the function to keep this change localized.)
+seedResourcesIfEmpty._seedOncePromise = null;

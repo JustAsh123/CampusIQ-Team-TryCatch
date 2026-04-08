@@ -21,7 +21,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`relative w-full ${maxWidth} bg-white dark:bg-surface-850 rounded-2xl shadow-2xl overflow-hidden`}
+            className={`relative w-full ${maxWidth} bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden transition-colors duration-300`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-surface-200 dark:border-surface-700">
