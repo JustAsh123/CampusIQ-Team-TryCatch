@@ -1,4 +1,4 @@
-<img width="1260" height="284" alt="image" src="https://github.com/user-attachments/assets/550062bf-3f1e-40a6-b5c1-9356ddf9c97b" /># CampusIQ
+# CampusIQ
 
 CampusIQ is a real-time resource management and booking system designed to improve how shared campus infrastructure is utilized.
 
