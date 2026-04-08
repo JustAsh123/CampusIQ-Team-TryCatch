@@ -40,6 +40,7 @@ function normalizeBooking(snapshot) {
     startTime: toDate(data.startTime),
     endTime: toDate(data.endTime),
     status: data.status ?? 'active',
+    checkedIn: typeof data.checkedIn === 'boolean' ? data.checkedIn : null,
     createdAt: toDate(data.createdAt),
   };
 }
