@@ -1,222 +1,110 @@
-# 🎓 CampusIQ — Campus Resource Optimizer
+<img width="1260" height="284" alt="image" src="https://github.com/user-attachments/assets/550062bf-3f1e-40a6-b5c1-9356ddf9c97b" /># CampusIQ
 
-A production-ready web application for managing campus resources (labs, rooms, equipment) with real-time availability tracking, smart booking, and usage analytics.
-
-**Built by Team TryCatch** 🚀
+CampusIQ is a real-time resource management and booking system designed to improve how shared campus infrastructure is utilized.
 
 ---
 
-## ⚡ Tech Stack
+## Features
 
-| Layer | Technology |
-|---|---|
-| Framework | React 19 + Vite 8 |
-| Auth & DB | Firebase (Auth + Firestore) |
-| Styling | TailwindCSS v4 |
-| Animations | Framer Motion |
-| Charts | Recharts |
-| Icons | Lucide React |
-| Routing | React Router v7 |
+### Resource Management
+
+* View live availability of labs, rooms, and equipment
+* Real-time status updates (available / occupied)
+
+<img width="1919" height="761" alt="image" src="https://github.com/user-attachments/assets/b4b26139-a1d5-42ee-ae12-29a3d313d57d" />
+ <!-- replace with actual image -->
 
 ---
 
-## 🚀 Getting Started
+### Booking System
 
-### Prerequisites
+* Book resources using time slots
+* Prevents double booking
+* Updates instantly across users
 
-- **Node.js** v18+
-- **npm** v9+
-- A **Firebase project** with:
-  - Authentication → Google sign-in & Email/Password enabled
-  - Cloud Firestore database created
+<img width="453" height="533" alt="image" src="https://github.com/user-attachments/assets/93c9d7a8-b06c-4e91-a0a6-8252dce464de" />
+<img width="1260" height="284" alt="image" src="https://github.com/user-attachments/assets/fe93d66c-ff8e-45ec-8689-03b1a2bf6336" />
 
-### 1. Clone the repository
+<!-- replace with actual image -->
+
+---
+
+### Analytics
+
+* No-show detection
+* Resource utilization tracking
+* Peak hour analysis
+* Overbooking detection
+
+<img width="1920" height="1821" alt="image" src="https://github.com/user-attachments/assets/faea1348-9899-4e84-8634-0751d66ecf71" />
+
+ <!-- replace with actual image -->
+
+---
+
+### UI
+
+* Dark / Light mode
+* Smooth transitions and animations
+* Responsive layout <!-- replace with actual image -->
+
+---
+
+## Tech Stack
+
+* React
+* Firebase (Auth + Firestore)
+* TailwindCSS
+* Framer Motion
+
+## AI Tools
+
+* Claude Opus 4.6
+* GPT 5.4
+
+---
+
+## Setup
 
 ```bash
-git clone https://github.com/JustAsh123/CampusIQ-Team-TryCatch.git
-cd CampusIQ-Team-TryCatch
-```
-
-### 2. Install dependencies
-
-```bash
+git clone <your-repo-url>
+cd campusiq
 npm install
-```
-
-### 3. Configure Firebase
-
-Copy the environment template and fill in your Firebase config:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your Firebase project credentials:
-
-```env
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-```
-
-> 💡 Find these values in your Firebase Console → Project Settings → General → Your apps → Web app → Config
-
-### 4. Run locally
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-### 5. Generate demo data
-
-After signing in, click the **"Generate Demo Data"** button on the Dashboard to populate Firestore with:
-- 25 realistic campus resources (labs, rooms, equipment)
-- ~70 booking records spanning the past 30 days and next 14 days
-
 ---
 
-## 📁 Project Structure
+## Environment Variables
+
+Create a `.env` file:
 
 ```
-src/
-├── components/
-│   ├── ui/                    # Reusable UI primitives
-│   │   ├── Badge.jsx
-│   │   ├── Modal.jsx
-│   │   └── Loader.jsx
-│   ├── layout/
-│   │   ├── Navbar.jsx         # Responsive nav with mobile drawer
-│   │   └── PageWrapper.jsx    # Layout wrapper with page transitions
-│   ├── BookingModal.jsx       # Resource booking with slot picker
-│   ├── ResourceCard.jsx       # Animated resource card
-│   ├── ResourceFilters.jsx    # Type/status filter bar
-│   ├── StatsCard.jsx          # Stats display card
-│   └── ThemeToggle.jsx        # Dark/light mode toggle
-├── pages/
-│   ├── Landing.jsx            # Hero + features + CTA
-│   ├── Login.jsx              # Google + email/password login
-│   ├── Register.jsx           # Account registration
-│   ├── Dashboard.jsx          # Overview + seed data + quick insights
-│   ├── Resources.jsx          # Browse + search + filter + book
-│   ├── Bookings.jsx           # User's bookings + cancel
-│   └── Analytics.jsx          # Charts + usage insights
-├── hooks/
-│   ├── useResources.js        # Firestore resource queries
-│   ├── useBookings.js         # Firestore booking queries
-│   └── useAnalytics.js        # Computed analytics from data
-├── services/
-│   ├── firebase.js            # Firebase initialization
-│   ├── authService.js         # Auth operations
-│   ├── resourceService.js     # Resource CRUD
-│   ├── bookingService.js      # Booking CRUD + conflict detection
-│   └── seedService.js         # Demo data generator
-├── context/
-│   ├── AuthContext.jsx        # Auth state provider
-│   └── ThemeContext.jsx       # Theme state provider
-├── utils/
-│   ├── constants.js           # App constants
-│   └── helpers.js             # Utility functions
-├── App.jsx                    # Root with routing + lazy loading
-├── main.jsx                   # Entry point
-└── index.css                  # Global styles + custom theme
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_APP_ID=
 ```
 
 ---
 
-## 🎨 Features
-
-### 🏠 Landing Page
-- Gradient hero section with animated stats
-- Feature highlights with hover effects
-- Professional SaaS-style design
-
-### 🔐 Authentication
-- Google Sign-In (popup)
-- Email/Password registration & login
-- Protected routes (auto-redirect to login)
-- User avatar in navbar
-
-### 📊 Dashboard
-- Summary stats (total resources, available, active bookings, peak hour)
-- Quick insights panel
-- Recent bookings feed
-- Available resources quick-access grid
-- **Generate Demo Data** button for Firestore seeding
-
-### 🏗️ Resource Browser
-- Search by name, description, or location
-- Filter by type (Lab/Room/Equipment) and status
-- Animated resource cards with hover effects
-- Click to book
-
-### 📅 Booking System
-- Visual time slot picker (8 AM – 8 PM)
-- Date selection with future-only dates
-- **Double-booking prevention** via Firestore query
-- Booked slots greyed out
-- Success confirmation animation
-- Cancel confirmed bookings
-
-### 📈 Analytics
-- **Peak Usage Hours** — Bar chart
-- **Most Popular Resources** — Horizontal bar chart
-- **Weekly Availability Trends** — Line chart
-- **Resource Type Distribution** — Donut chart
-- Summary insight cards
-
-### 🌙 Dark/Light Mode
-- System preference detection
-- Smooth CSS transitions
-- LocalStorage persistence
-- Animated toggle icon
-
----
-
-## 🏗️ Build for Production
+## Build
 
 ```bash
 npm run build
 ```
 
-Output will be in the `dist/` folder, ready for Firebase Hosting or any static host.
+---
 
-### Deploy to Firebase Hosting
+## Notes
 
-```bash
-npm install -g firebase-tools
-firebase login
-firebase init hosting   # Select 'dist' as public directory, configure as SPA
-firebase deploy
-```
+* Uses Firestore for real-time data
+* Resources are seeded once and stored permanently
+* Analytics are computed from live booking data
 
 ---
 
-## 🔒 Firestore Security Rules (Recommended)
+## Author
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /resources/{resourceId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-    match /bookings/{bookingId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-  }
-}
-```
-
----
-
-## 📝 License
-
-MIT © Team TryCatch
+Ashmit Kumar (23BCE10453)
+Om Prasad (23BCG10091)
